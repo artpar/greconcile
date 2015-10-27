@@ -24,6 +24,9 @@ const (
 )
 
 
+type Row map[string]interface{}
+type Result []Row
+
 
 type DataInstance interface {
 	GetStatus() Status

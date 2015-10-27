@@ -5,6 +5,8 @@ import (
 	flag "gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"path/filepath"
+	"io/ioutil"
+	"encoding/json"
 )
 
 var (
@@ -14,27 +16,48 @@ var (
 	log = logger.MustGetLogger(moduleName)
 )
 
-type Status int
-
-const (
-	Success = iota
-	Failed
-	Pending
-	Initiated
-)
-
 
 type Row map[string]interface{}
 type Result []Row
 
-
-type DataInstance interface {
-	GetStatus() Status
+type DataEndPoint interface {
+	Iterate(after uint64, limit int) Result
 }
 
-type DataRepository interface {
-	Iterate(after uint64, limit int) []DataInstance
-	GetByKey(key string, value string) DataInstance
+type Compare struct {
+	Source, Target string
+}
+
+type ReconTask struct {
+	Source      DataEndPoint
+	Target      DataEndPoint
+	CompareList []Compare
+}
+
+type DataEndPointConfig struct {
+	Type   string
+	Config map[string]interface{}
+}
+
+type Task struct {
+	Type   string
+	Config map[string]interface{}
+}
+
+type ActionTasksConfig struct {
+	Tasks []Task
+}
+
+type ActionConfig struct {
+	Match    ActionTasksConfig
+	MisMatch ActionTasksConfig
+}
+
+type ReconTaskConfig struct {
+	Source  DataEndPointConfig
+	Target  DataEndPointConfig
+	Compare []Compare
+	Action  ActionConfig
 }
 
 
@@ -82,6 +105,8 @@ func initLog(logConfig map[string]interface{}) {
 }
 
 
+
+
 func init() {
 	flag.Parse()
 	config.SetConfigFile(*configFileName)
@@ -97,12 +122,23 @@ func init() {
 func main() {
 	log.Info("Started")
 	log.Info("Tasks Directory %s", *taskDirectoryName)
-	tasks := make([]string, 0)
+	taskFiles := make([]string, 0)
 	filepath.Walk(*taskDirectoryName, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			tasks = append(tasks, info.Name())
-			log.Info("Task file: %s", path)
+			log.Info("Task file: %s\n", path)
+			taskFiles = append(taskFiles, path)
 		}
 		return nil
 	})
+	tasks := make([]ReconTaskConfig, len(taskFiles))
+	for i, taskFile := range taskFiles {
+		data, err := ioutil.ReadFile(taskFile)
+		if err != nil {
+			log.Panic("Failed to read task [%s] - %v", taskFile, err)
+		}
+		var v ReconTaskConfig
+		json.Unmarshal(data, &v)
+		tasks[i] = v
+		log.Info("Task %s config\n%v", taskFile, v)
+	}
 }

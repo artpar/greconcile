@@ -1,22 +1,22 @@
 package main
+
 import (
-	config "github.com/spf13/viper"
-	logger "github.com/op/go-logging"
-	flag "gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"path/filepath"
-	"io/ioutil"
 	"encoding/json"
 	"errors"
+	logger "github.com/op/go-logging"
+	config "github.com/spf13/viper"
+	flag "gopkg.in/alecthomas/kingpin.v2"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 var (
-	configFileName = flag.Flag("config", "Config file name").Short('c').Required().String()
+	configFileName    = flag.Flag("config", "Config file name").Short('c').Required().String()
 	taskDirectoryName = flag.Flag("tasks", "Task Directory name").Short('t').Required().String()
-	moduleName = "greconcile"
-	log = logger.MustGetLogger(moduleName)
+	moduleName        = "greconcile"
+	log               = logger.MustGetLogger(moduleName)
 )
-
 
 func initLog(logConfig map[string]interface{}) {
 
@@ -24,13 +24,13 @@ func initLog(logConfig map[string]interface{}) {
 	_, ok := logConfig["level"]
 	if ok {
 		switch logConfig["level"].(string) {
-		case "debug" :
+		case "debug":
 			logger.SetLevel(logger.NOTICE, moduleName)
-		case "error" :
+		case "error":
 			logger.SetLevel(logger.ERROR, moduleName)
-		case "info" :
+		case "info":
 			logger.SetLevel(logger.INFO, moduleName)
-		case "warn" :
+		case "warn":
 			logger.SetLevel(logger.WARNING, moduleName)
 		}
 	}
@@ -45,7 +45,7 @@ func initLog(logConfig map[string]interface{}) {
 	if ok {
 		logFileName := logConfig["file"].(string)
 
-		logFile, err := os.OpenFile(logFileName, os.O_RDWR | os.O_APPEND | os.O_CREATE, 0660)
+		logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
 		backend := logger.NewLogBackend(logFile, "", 0)
 		if err != nil {
 			log.Error("Failed to open log file - " + logFileName)
@@ -60,9 +60,6 @@ func initLog(logConfig map[string]interface{}) {
 	}
 
 }
-
-
-
 
 func init() {
 	flag.Parse()
@@ -108,7 +105,10 @@ func main() {
 		var err error
 		task := ReconTask{}
 		task.Source, err = makeDataEndPoint(taskConfig.Source)
-		checkErr(err, "Failed to make source data end point for - " + taskConfig.FileName)
+		checkErr(err, "Failed to make source data end point for - "+taskConfig.FileName)
+		task.Target, err = makeDataEndPoint(taskConfig.Target)
+		checkErr(err, "Failed to make target data end point for - "+taskConfig.FileName)
+
 		tasks[i] = task
 	}
 
@@ -124,6 +124,7 @@ func checkErr(err error, message string) {
 }
 
 func makeDataEndPoint(config DataEndPointConfig) (DataEndPoint, error) {
+	log.Debug("Make type %s", config.Type)
 	switch config.Type {
 	case "mysql":
 		endPoint, err := NewMysqlDataProvider(config.Config)
@@ -141,4 +142,3 @@ func makeDataEndPoint(config DataEndPointConfig) (DataEndPoint, error) {
 	}
 	return nil, errors.New("Failed to identify type of data source - " + config.Type)
 }
-

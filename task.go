@@ -1,6 +1,5 @@
 package main
 
-
 type Compare struct {
 	Source, Target string
 }
@@ -15,8 +14,13 @@ type ReconTask struct {
 func (rt ReconTask) Execute() {
 	log.Info("Started task")
 
-	result := rt.Source.Iterate(0, 1000)
-	for _, row := range result {
-		log.Debug("Process row: %v", row)
+	result, err := rt.Source.Iterate(0, 1000)
+	if err != nil {
+		log.Error("Failed to get data from source: %v", err)
+		return
+	}
+	for _, sourceData := range result {
+		log.Debug("Process row: %v", sourceData)
+		rt.Target.Get(sourceData)
 	}
 }

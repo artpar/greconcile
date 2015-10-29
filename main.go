@@ -3,12 +3,10 @@ import (
 	config "github.com/spf13/viper"
 	logger "github.com/op/go-logging"
 	flag "gopkg.in/alecthomas/kingpin.v2"
-	_ "github.com/go-sql-driver/mysql"
 	"os"
 	"path/filepath"
 	"io/ioutil"
 	"encoding/json"
-	"database/sql"
 	"errors"
 )
 
@@ -18,60 +16,6 @@ var (
 	moduleName = "greconcile"
 	log = logger.MustGetLogger(moduleName)
 )
-
-
-type Row map[string]interface{}
-type Result []Row
-
-type DataEndPoint interface {
-	Iterate(after uint64, limit int) Result
-}
-
-type MysqlDataEndPoint struct {
-	db *sql.DB
-}
-
-func (this MysqlDataEndPoint) Iterate(after uint64, limit int) Result {
-	return Result{}
-}
-
-type Compare struct {
-	Source, Target string
-}
-
-type ReconTask struct {
-	Source      DataEndPoint
-	Target      DataEndPoint
-	CompareList []Compare
-}
-
-type DataEndPointConfig struct {
-	Type   string
-	Config map[string]interface{}
-}
-
-type Task struct {
-	Type   string
-	Config map[string]interface{}
-}
-
-type ActionTasksConfig struct {
-	Tasks []Task
-}
-
-type ActionConfig struct {
-	Match    ActionTasksConfig
-	MisMatch ActionTasksConfig
-}
-
-type ReconTaskConfig struct {
-	Name     string
-	FileName string
-	Source   DataEndPointConfig
-	Target   DataEndPointConfig
-	Compare  []Compare
-	Action   ActionConfig
-}
 
 
 func initLog(logConfig map[string]interface{}) {
@@ -167,6 +111,10 @@ func main() {
 		checkErr(err, "Failed to make source data end point for - " + taskConfig.FileName)
 		tasks[i] = task
 	}
+
+	for _, task := range tasks {
+		task.Execute()
+	}
 }
 
 func checkErr(err error, message string) {
@@ -178,19 +126,19 @@ func checkErr(err error, message string) {
 func makeDataEndPoint(config DataEndPointConfig) (DataEndPoint, error) {
 	switch config.Type {
 	case "mysql":
-		endPoint, err := NewMysqlDataProvider(config.Config["connectionString"].(string))
+		endPoint, err := NewMysqlDataProvider(config.Config)
 		if err != nil {
 			return nil, err
 		}
 		return endPoint, nil
+	case "webApi":
+		endPoint, err := NewWebApi(config.Config)
+		if err != nil {
+			return nil, err
+		}
+		return endPoint, nil
+
 	}
 	return nil, errors.New("Failed to identify type of data source - " + config.Type)
 }
 
-func NewMysqlDataProvider(connectionString string) (MysqlDataEndPoint, error) {
-	db, err := sql.Open("mysql", connectionString)
-	if err != nil {
-		return MysqlDataEndPoint{}, err
-	}
-	return MysqlDataEndPoint{db:db}, nil
-}

@@ -11,6 +11,7 @@ type ReconTask struct {
 	Action      ActionConfig
 }
 
+
 func (rt ReconTask) Execute() {
 	log.Info("Started task")
 
@@ -21,6 +22,35 @@ func (rt ReconTask) Execute() {
 	}
 	for _, sourceData := range result {
 		log.Debug("Process row: %v", sourceData)
-		rt.Target.Get(sourceData)
+		targetData, err := rt.Target.Get(sourceData)
+		if err != nil {
+			log.Error("Failed to get target data for %v\n%v", sourceData, err)
+			continue
+		}
+		CompareData(sourceData, targetData, rt.CompareList)
 	}
 }
+
+type CompareResult struct {
+
+}
+
+type KeyCompareResult struct {
+	sourceKey   string
+	targetKey   string
+	sourceValue string
+	targetValue string
+}
+
+func CompareData(source, target Row, compareList []Compare) CompareResult {
+
+	for _, compare := range compareList {
+		sourceValue := EvaluateTemplate(compare.Source, source)
+		targetValue := EvaluateTemplate(compare.Target, target)
+		if sourceValue != targetValue {
+
+		}
+	}
+}
+
+

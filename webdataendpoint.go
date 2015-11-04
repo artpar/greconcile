@@ -7,10 +7,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"github.com/alecthomas/template"
-	"bytes"
 	"reflect"
 	"encoding/json"
+	"errors"
 )
 
 type RequestConfig struct {
@@ -48,7 +47,7 @@ func (this WebEndPoint) Get(row map[string]interface{}) (Row, error) {
 		//			log.Info("Construct is function type: %s: [%s]: %v", val, val[1:], constructs[val[1:]])
 		//			value = evaluateFunction(constructs[val[1:]].(map[string]interface{}), row)
 		default:
-			value = evaluateTemplate(val, stringContext)
+			value = EvaluateTemplate(val, stringContext)
 		}
 		dataMap[key] = value
 	}
@@ -80,28 +79,39 @@ func (this WebEndPoint) Get(row map[string]interface{}) (Row, error) {
 		}
 	}
 
-	returnRow, err := processHttpResponse(response, this.response, stringContext)
+	data, err := processHttpResponse(response, this.response)
+	returnRow, err := makeRowFromByte(data, this.response, stringContext)
 	if err != nil {
 		return nil, err
 	}
 	return returnRow, nil
 }
 
-func processHttpResponse(response *http.Response, responseConfig ResponseConfig, context map[string]interface{}) (Row, error) {
+func makeRowFromByte(data []byte, responseConfig ResponseConfig, context map[string]interface{}) (Row, error) {
+	switch responseConfig.responseType {
+	case "json" :
+		var x map[string]interface{}
+		err := json.Unmarshal(data, &x)
+		return x, err
+	}
+	return nil, errors.New("Invalid type of response in config [" + responseConfig.responseType + "]")
+}
+
+func processHttpResponse(response *http.Response, responseConfig ResponseConfig) ([]byte, error) {
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 	stringBody := string(body)
 	log.Debug("String response: %s", stringBody)
-	log.Debug("Response config %v", responseConfig)
-	var mapValue map[string]interface{}
-	json.Unmarshal(body, &mapValue)
-	context["x"] = mapValue
-	log.Debug("Map: %v", mapValue)
-	result := evaluateTemplate(responseConfig.key, context)
-	log.Debug("Response Extracted: %v", result)
-	return mapValue, nil
+	//	log.Debug("Response config %v", responseConfig)
+	//	var mapValue map[string]interface{}
+	//	json.Unmarshal(body, &mapValue)
+	//	context["x"] = mapValue
+	//	log.Debug("Map: %v", mapValue)
+	//	result := evaluateTemplate(responseConfig.key, context)
+	//	log.Debug("Response Extracted: %v", result)
+	return body, nil
 }
 
 func convertToStringMap(context map[string]interface{}) map[string]interface{} {
@@ -117,28 +127,12 @@ func convertToStringMap(context map[string]interface{}) map[string]interface{} {
 		case map[string]interface{}:
 			stringVal = convertToStringMap(val.(map[string]interface{}))
 		}
-		log.Info("Convert value[%v] %s -> %v to %v", reflect.TypeOf(val), key, val, stringVal)
+		log.Debug("Convert value[%v] %s -> %v to %v", reflect.TypeOf(val), key, val, stringVal)
 		newMap[key] = stringVal
 	}
 	return newMap
 }
 
-func evaluateTemplate(templateString string, context map[string]interface{}) string {
-	context["Sha512"] = Sha512
-	funcMap := template.FuncMap{
-		"Sha512": Sha512,
-	}
-	tmpl, err := template.New("dummy").Funcs(funcMap).Parse(templateString)
-	if err != nil {
-		log.Error("Failed to parse template - [%s]\n%v", templateString, err)
-		return "[TemplateFail]"
-	}
-
-	writer := &bytes.Buffer{}
-	tmpl.Execute(writer, context)
-	log.Debug("Executed template value [%s] -> [%s]", templateString, writer.String())
-	return writer.String()
-}
 
 func NewWebApi(config map[string]interface{}) (WebEndPoint, error) {
 	requestConfig := config["request"].(map[string]interface{})
@@ -146,7 +140,6 @@ func NewWebApi(config map[string]interface{}) (WebEndPoint, error) {
 		url: config["url"].(string),
 		request: RequestConfig{
 			method:     requestConfig["method"].(string),
-			constructs: requestConfig["constructs"].(map[string]interface{}),
 		},
 	}
 	params := requestConfig["params"].(map[string]interface{})

@@ -12,10 +12,10 @@ import (
 )
 
 var (
-	configFileName    = flag.Flag("config", "Config file name").Short('c').Required().String()
+	configFileName = flag.Flag("config", "Config file name").Short('c').Required().String()
 	taskDirectoryName = flag.Flag("tasks", "Task Directory name").Short('t').Required().String()
-	moduleName        = "greconcile"
-	log               = logger.MustGetLogger(moduleName)
+	moduleName = "greconcile"
+	log = logger.MustGetLogger(moduleName)
 )
 
 func initLog(logConfig map[string]interface{}) {
@@ -45,7 +45,7 @@ func initLog(logConfig map[string]interface{}) {
 	if ok {
 		logFileName := logConfig["file"].(string)
 
-		logFile, err := os.OpenFile(logFileName, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0660)
+		logFile, err := os.OpenFile(logFileName, os.O_RDWR | os.O_APPEND | os.O_CREATE, 0660)
 		backend := logger.NewLogBackend(logFile, "", 0)
 		if err != nil {
 			log.Error("Failed to open log file - " + logFileName)
@@ -105,10 +105,11 @@ func main() {
 		var err error
 		task := ReconTask{}
 		task.Source, err = makeDataEndPoint(taskConfig.Source)
-		checkErr(err, "Failed to make source data end point for - "+taskConfig.FileName)
+		checkErr(err, "Failed to make source data end point for - " + taskConfig.FileName)
 		task.Target, err = makeDataEndPoint(taskConfig.Target)
-		checkErr(err, "Failed to make target data end point for - "+taskConfig.FileName)
-
+		checkErr(err, "Failed to make target data end point for - " + taskConfig.FileName)
+		task.CompareList = taskConfig.Compare
+		task.Action = taskConfig.Action
 		tasks[i] = task
 	}
 

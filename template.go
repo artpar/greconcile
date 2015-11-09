@@ -1,7 +1,10 @@
 package main
 import (
-"bytes"
-"html/template"
+	"bytes"
+	"html/template"
+	"reflect"
+	"time"
+	"github.com/fatih/structs"
 )
 
 
@@ -21,3 +24,49 @@ func EvaluateTemplate(templateString string, context map[string]interface{}) str
 	log.Debug("Executed template value [%s] -> [%s]", templateString, writer.String())
 	return writer.String()
 }
+
+func ConvertToString(context interface{}) interface{} {
+	kindOfContext := reflect.TypeOf(context)
+	switch context.(type) {
+	case Row:
+		newMap := map[string]interface{}{}
+		m := context.(Row)
+		for key, val := range m {
+			keyString := ConvertToString(key).(string)
+			keyVal := ConvertToString(val)
+			newMap[keyString] = keyVal
+		}
+		return newMap
+	case map[string]interface{}:
+		newMap := map[string]interface{}{}
+		m := context.(map[string]interface{})
+		for key, val := range m {
+			keyString := ConvertToString(key).(string)
+			keyVal := ConvertToString(val)
+			newMap[keyString] = keyVal
+		}
+		return newMap
+
+	case []uint8:
+		return string(context.([]uint8))
+	case uint8:
+		return context
+	case int64:
+		return context
+	case float64:
+		return context
+	case func(string) string:
+		return "function(string)string"
+	case KeyCompareResult:
+		return structs.Map(context)
+	case time.Time:
+		return context.(time.Time).String()
+
+	case string:
+		return context
+	default:
+		log.Info("Dont know kind of context %v", kindOfContext)
+		return context
+	}
+}
+

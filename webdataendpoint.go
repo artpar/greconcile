@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"reflect"
 	"encoding/json"
 	"errors"
 )
@@ -38,7 +37,7 @@ func (this WebEndPoint) Get(row map[string]interface{}) (Row, error) {
 	var err error
 	params := this.request.params
 	dataMap := make(map[string]string)
-	stringContext := convertToStringMap(row)
+	stringContext := ConvertToString(row).(map[string]interface{})
 	//	constructs := this.request.constructs
 	for key, val := range params {
 		var value string
@@ -113,26 +112,6 @@ func processHttpResponse(response *http.Response, responseConfig ResponseConfig)
 	//	log.Debug("Response Extracted: %v", result)
 	return body, nil
 }
-
-func convertToStringMap(context map[string]interface{}) map[string]interface{} {
-	newMap := map[string]interface{}{}
-	for key, val := range context {
-		var stringVal interface{}
-		stringVal = val
-		switch val.(type) {
-		case byte:
-			stringVal = string(stringVal.(byte))
-		case []uint8:
-			stringVal = string(stringVal.([]uint8))
-		case map[string]interface{}:
-			stringVal = convertToStringMap(val.(map[string]interface{}))
-		}
-		log.Debug("Convert value[%v] %s -> %v to %v", reflect.TypeOf(val), key, val, stringVal)
-		newMap[key] = stringVal
-	}
-	return newMap
-}
-
 
 func NewWebApi(config map[string]interface{}) (WebEndPoint, error) {
 	requestConfig := config["request"].(map[string]interface{})

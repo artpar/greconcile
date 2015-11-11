@@ -83,7 +83,11 @@ func (rt ReconTask) performTask(task ActionItemConfig, stringContext map[string]
 		if err != nil {
 			log.Error("Failed to connect to mysql - %v", err)
 		}
-		result, err := endPoint.db.Exec(query, paramValues...)
+		stmt, err := endPoint.db.Prepare(query)
+		if err != nil {
+			log.Error("Failed to prepare statement- %v", err)
+		}
+		result, err := stmt.Exec(paramValues...)
 		if err != nil {
 			log.Error("Failed to Execute query - %v", err)
 		}

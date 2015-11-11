@@ -71,12 +71,12 @@ func (rt ReconTask) performTask(task ActionItemConfig, stringContext map[string]
 		message := EvaluateTemplate(task.Config["message"].(string), stringContext)
 		slackClient := slack.New(task.Config["slackKey"].(string))
 		slackClient.PostMessage(task.Config["slackTo"].(string), message, slack.NewPostMessageParameters())
-	case "updateMysql":
+	case "executeMysql":
 		query := EvaluateTemplate(task.Config["query"].(string), stringContext)
-		params := task.Config["params"].([]string)
+		params := task.Config["params"].([]interface{})
 		paramValues := make([]interface{}, 0)
 		for _, param := range params {
-			paramValue := EvaluateTemplate(param, stringContext)
+			paramValue := EvaluateTemplate(param.(string), stringContext)
 			paramValues = append(paramValues, paramValue)
 		}
 		endPoint, err := NewMysqlDataProvider(task.Config["mysqlConfig"].(map[string]interface{}))
@@ -87,7 +87,8 @@ func (rt ReconTask) performTask(task ActionItemConfig, stringContext map[string]
 		if err != nil {
 			log.Error("Failed to Execute query - %v", err)
 		}
-		if result.RowsAffected() < 1 {
+		count, _ := result.RowsAffected()
+		if count < 1 {
 			log.Info("0 rows affected, might want to check - %v", stringContext)
 		}
 	}

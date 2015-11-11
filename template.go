@@ -5,13 +5,25 @@ import (
 	"reflect"
 	"time"
 	"github.com/fatih/structs"
+	"fmt"
+	"strconv"
 )
 
+func Divide(a interface{}, b int) string {
+	strVal := fmt.Sprintf("%v", a)
+	aFloat, err := strconv.ParseFloat(strVal, 64)
+	if err != nil {
+		return "FailedToParseFloat[" + strVal + "]"
+	}
+	//	log.Error("---- ------------------Divide %v by %v -> %v", aFloat, b, fmt.Sprintf("%.2f", aFloat / float64(b)))
+	return fmt.Sprintf("%.2f", aFloat / float64(b))
+}
 
 func EvaluateTemplate(templateString string, context map[string]interface{}) string {
 	context["Sha512"] = Sha512
 	funcMap := template.FuncMap{
 		"Sha512": Sha512,
+		"Divide": Divide,
 	}
 	tmpl, err := template.New("dummy").Funcs(funcMap).Parse(templateString)
 	if err != nil {
@@ -64,6 +76,8 @@ func ConvertToString(context interface{}) interface{} {
 
 	case string:
 		return context
+	case nil:
+		return ""
 	default:
 		log.Info("Dont know kind of context %v", kindOfContext)
 		return context

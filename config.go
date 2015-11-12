@@ -21,11 +21,21 @@ type ActionConfig struct {
 	MisMatch ActionList
 }
 
+type LogConfig struct {
+	Filename string
+	Level    string
+	Format   string
+}
+
 type ReconTaskConfig struct {
-	Name     string
-	FileName string
-	Source   DataEndPointConfig
-	Target   DataEndPointConfig
-	Compare  []Compare
-	Action   ActionConfig
+	Name                 string
+	FileName             string
+	Source               DataEndPointConfig
+	Target               DataEndPointConfig
+	Compare              []Compare
+	Action               map[string]ActionConfig
+	BigDelay, SmallDelay int
+	Log                  LogConfig
+	SourceIdString       string
+
 }

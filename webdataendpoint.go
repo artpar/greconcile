@@ -56,10 +56,10 @@ func (this WebEndPoint) Get(row map[string]interface{}) (Row, error) {
 		for key, val := range dataMap {
 			data[key] = []string{val}
 		}
-		log.Debug("Post body: %v", data)
+		mainLogger.Debug("Post body: %v", data)
 		response, err = http.PostForm(this.url, data)
 		if err != nil {
-			log.Error("Failed to get data from [" + this.url + "]")
+			mainLogger.Error("Failed to get data from [" + this.url + "]")
 			return Row{}, err
 		}
 	case "get":
@@ -73,7 +73,7 @@ func (this WebEndPoint) Get(row map[string]interface{}) (Row, error) {
 		}
 		response, err = http.Get(this.url + restOfTheUrl)
 		if err != nil {
-			log.Error("Failed to get data from [" + this.url + "]")
+			mainLogger.Error("Failed to get data from [" + this.url + "]")
 			return Row{}, err
 		}
 	}
@@ -102,14 +102,7 @@ func processHttpResponse(response *http.Response, responseConfig ResponseConfig)
 		return nil, err
 	}
 	stringBody := string(body)
-	log.Debug("String response: %s", stringBody)
-	//	log.Debug("Response config %v", responseConfig)
-	//	var mapValue map[string]interface{}
-	//	json.Unmarshal(body, &mapValue)
-	//	context["x"] = mapValue
-	//	log.Debug("Map: %v", mapValue)
-	//	result := evaluateTemplate(responseConfig.key, context)
-	//	log.Debug("Response Extracted: %v", result)
+	mainLogger.Debug("String response: %s", stringBody)
 	return body, nil
 }
 
@@ -122,7 +115,7 @@ func NewWebApi(config map[string]interface{}) (WebEndPoint, error) {
 		},
 	}
 	params := requestConfig["params"].(map[string]interface{})
-	log.Debug("Url Params: %v", params)
+	//	mainLogger.Debug("Url Params: %v", params)
 	stringParams := make(map[string]string)
 	for key, val := range params {
 		stringParams[key] = val.(string)
@@ -138,10 +131,10 @@ func NewWebApi(config map[string]interface{}) (WebEndPoint, error) {
 }
 
 func Sha512(str string) string {
-	log.Info("String to hash - [" + str + "]")
+	mainLogger.Info("String to hash - [" + str + "]")
 	h := sha512.New()
 	h.Write([]byte(str))
 	sha1_hash := hex.EncodeToString(h.Sum(nil))
-	log.Info("Hash [" + sha1_hash + "]")
+	mainLogger.Info("Hash [" + sha1_hash + "]")
 	return sha1_hash
 }

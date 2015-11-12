@@ -1,7 +1,0 @@
-[34mINFO[0m[0000] Started                                      
-main.go:73 2015-10-23T17:07:54 I 0002 greconcile Started
-main.go:73 2015-10-23T17:13:38 I 0002 greconcile Started
-main.go:75 2015-10-23T18:35:06 I 0002 greconcile Started
-main.go:76 2015-10-23T18:35:06 I 0003 greconcile Tasks Directory %!s(*string=0xc820015670)
-main.go:81 2015-10-23T18:35:06 I 0004 greconcile Task Directory: tasks
-main.go:81 2015-10-23T18:35:06 I 0005 greconcile Task Directory: transaction_verify

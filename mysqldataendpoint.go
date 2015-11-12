@@ -13,7 +13,7 @@ type MysqlDataEndPoint struct {
 func (this MysqlDataEndPoint) Iterate(after uint64, limit int) (Result, error) {
 	result, err := this.db.Queryx("Select * from "+this.tableName+" limit ?,?", after, limit)
 	if err != nil {
-		log.Error("Failed to get results from [%s], %v", this.tableName, err)
+		mainLogger.Error("Failed to get results from [%s], %v", this.tableName, err)
 		return Result{}, err
 	}
 	defer result.Close()

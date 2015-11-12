@@ -27,13 +27,13 @@ func EvaluateTemplate(templateString string, context map[string]interface{}) str
 	}
 	tmpl, err := template.New("dummy").Funcs(funcMap).Parse(templateString)
 	if err != nil {
-		log.Error("Failed to parse template - [%s]\n%v", templateString, err)
+		mainLogger.Error("Failed to parse template - [%s]\n%v", templateString, err)
 		return "[TemplateFail]"
 	}
 
 	writer := &bytes.Buffer{}
 	tmpl.Execute(writer, context)
-	log.Debug("Executed template value [%s] -> [%s]", templateString, writer.String())
+	mainLogger.Debug("Executed template value [%s] -> [%s]", templateString, writer.String())
 	return writer.String()
 }
 
@@ -79,7 +79,7 @@ func ConvertToString(context interface{}) interface{} {
 	case nil:
 		return ""
 	default:
-		log.Info("Dont know kind of context %v", kindOfContext)
+		mainLogger.Info("Dont know kind of context %v", kindOfContext)
 		return context
 	}
 }

@@ -1,7 +1,7 @@
 package main
 import (
 	"bytes"
-	"html/template"
+	"text/template"
 	"reflect"
 	"time"
 	"github.com/fatih/structs"
